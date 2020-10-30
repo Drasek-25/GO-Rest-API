@@ -12,6 +12,8 @@ import (
 
 // ADD HTTP STATUS CODES
 // UPDATE ROUTE WIPES OUT FIELDS THAT WERNT SENT FROM ORIGINAL
+// CREATE HELPERS PACKAGE FOR URL PARAMS AND DECODERS
+// PUT POKEMON STRUCT INTO SEPERATE MODEL FILE
 var pokemon = parseJson.ParseJson()
 
 func GetPokemonByType(w http.ResponseWriter, r *http.Request) {
@@ -96,6 +98,36 @@ func CreatePokemon(w http.ResponseWriter, r *http.Request) {
 	pokemon = append(pokemon, newPokemon)
 	log.Println("CreatePokemon was Succesful")
 	json.NewEncoder(w).Encode(pokemon[len(pokemon)-1])
+}
+
+func DeletePokemon(w http.ResponseWriter, r *http.Request) {
+	log.Println("Endpoint Hit: DeletePokemon")
+
+	keys, ok := r.URL.Query()["key"]
+	if !ok || len(keys[0]) < 1 {
+		log.Println("Url Param 'key' is missing")
+		json.NewEncoder(w).Encode("Missing Key")
+		return
+	}
+	fmt.Println("Searching for: ", keys[0])
+
+	var deleted parseJson.Pokemon
+	for i := 0; i < len(pokemon); i++ {
+		if pokemon[i].Name == keys[0] {
+			pokemon[len(pokemon)-1], pokemon[i] = pokemon[i], pokemon[len(pokemon)-1]
+			deleted = pokemon[len(pokemon)-1]
+			pokemon = pokemon[:len(pokemon)-1]
+			break
+		}
+	}
+
+	if deleted.Name == "" {
+		json.NewEncoder(w).Encode("Pokemon Not Found")
+		fmt.Println("Search Failed")
+	} else {
+		json.NewEncoder(w).Encode(deleted)
+		fmt.Println("Deletion Succeded")
+	}
 }
 
 func GetAllPokemon(w http.ResponseWriter, r *http.Request) {
