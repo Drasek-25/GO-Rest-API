@@ -11,10 +11,12 @@ import (
 )
 
 // ADD HTTP STATUS CODES
+// UPDATE ROUTE WIPES OUT FIELDS THAT WERNT SENT FROM ORIGINAL
 var pokemon = parseJson.ParseJson()
 
 func GetPokemonByType(w http.ResponseWriter, r *http.Request) {
 	log.Println("Endpoint Hit: GetPokemonByType")
+
 	keys, ok := r.URL.Query()["key"]
 	if !ok || len(keys[0]) < 1 {
 		log.Println("Url Param 'key' is missing")
@@ -43,17 +45,51 @@ func GetPokemonByType(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func HomePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Endpoint Hit: HomePage")
+func UpdatePokemon(w http.ResponseWriter, r *http.Request) {
+	log.Println("Endpoint Hit: UpdatePokemon")
+
+	keys, ok := r.URL.Query()["key"]
+	if !ok || len(keys[0]) < 1 {
+		log.Println("Url Param 'key' is missing")
+		json.NewEncoder(w).Encode("Missing Key")
+		return
+	}
+	fmt.Println("Searching for: ", keys[0])
+
+	var newPokemon parseJson.Pokemon
+	err := json.NewDecoder(r.Body).Decode(&newPokemon)
+	if err != nil {
+		fmt.Println("Invalid pokemon formatting")
+		json.NewEncoder(w).Encode("Invalid pokemon formatting")
+		return
+	}
+
+	index := -1
+	for i := 0; i < len(pokemon); i++ {
+		if pokemon[i].Name == keys[0] {
+			pokemon[i] = newPokemon
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		json.NewEncoder(w).Encode("Pokemon Not Found")
+		fmt.Println("Search Failed")
+	} else {
+		json.NewEncoder(w).Encode(pokemon[index])
+		fmt.Println("Search Succeded")
+	}
 }
 
 func CreatePokemon(w http.ResponseWriter, r *http.Request) {
 	log.Println("Endpoint Hit: CreatePokemon")
+
 	var newPokemon parseJson.Pokemon
 	err := json.NewDecoder(r.Body).Decode(&newPokemon)
 	if err != nil {
-		fmt.Println("Invalid formatting")
-		json.NewEncoder(w).Encode("Invalid formatting")
+		fmt.Println("Invalid pokemon formatting")
+		json.NewEncoder(w).Encode("Invalid pokemon formatting")
 		return
 	}
 
